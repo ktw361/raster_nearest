@@ -96,7 +96,8 @@ float inter2(float * points_2d,float * cof,int ii,int jj,int i,int j){
 
   	float s1 = dis(ii,jj,x1,y1);
   	float s2 = dis(ii,jj,x2,y2);
-  	return s2/(s1+s2)*cof[i] + s1/(s1+s2)*cof[j];
+    return (s1 < s2) ? cof[i] : cof[j];
+  	/* return s2/(s1+s2)*cof[i] + s1/(s1+s2)*cof[j]; */
 }
 
 float inter(float* points_2d,
@@ -104,15 +105,6 @@ float inter(float* points_2d,
             int ii, int jj,
             int i, int j, int k)
 {
-	if (equal(points_2d,i,j) &&  equal(points_2d,j,k) && equal(points_2d,i,k))
-		return cof[i];
-	if (equal(points_2d,i,j))
-		return inter2(points_2d,cof,ii,jj,j,k);
-	if (equal(points_2d,i,k))
-		return inter2(points_2d,cof,ii,jj,j,k);
-	if (equal(points_2d,j,k))
-		return inter2(points_2d,cof,ii,jj,i,j);
-
 	float x1 = points_2d[i*2];
 	float y1 = points_2d[i*2+1];
 	float x2 = points_2d[j*2];
@@ -120,43 +112,21 @@ float inter(float* points_2d,
 	float x3 = points_2d[k*2];
 	float y3 = points_2d[k*2+1];
 
-	// in x_line or y_line
-	if ((abs(y1-y2)<1e-5) && (abs(y3-y2)<1e-5))
-		return inter2(points_2d,cof,ii,jj,i,j);
-	if ((abs(x1-x2)<1e-5) && (abs(x3-x2)<1e-5))
-		return inter2(points_2d,cof,ii,jj,i,j);
-
-	// sort
-	if (points_2d[i*2]>points_2d[j*2])
-		swap(i,j);
-	if (points_2d[j*2]>points_2d[k*2])
-		swap(j,k);
-	if (points_2d[i*2]>points_2d[j*2])
-		swap(i,j);
-
-	if ((ii>points_2d[j*2]) && (ii<points_2d[k*2]))
-		swap(i,k);
-
-	x1 = points_2d[i*2];y1 = points_2d[i*2+1];
-	x2 = points_2d[j*2];y2 = points_2d[j*2+1];
-	x3 = points_2d[k*2];y3 = points_2d[k*2+1];
-
-
-	float ya =  y1 + (ii-x1)/(x2-x1)*(y2-y1);
-	float yb =  y1 + (ii-x1)/(x3-x1)*(y3-y1);
-	float cofa = (cof[i] * (ii - x2) + cof[j] * (x1 - ii)  ) / (x1-x2);
-	float cofb = (cof[i] * (ii - x3) + cof[k] * (x1 - ii) ) / (x1-x3);
-	float cof_ret = (cofa*(yb-jj) + cofb*(jj-ya) ) / (yb-ya);
-
-	if ( cof_ret <min(cof[i],min(cof[j],cof[k])) )
-		cof_ret = min(cof[i],min(cof[j],cof[k]));
-	if ( cof_ret >max(cof[i],max(cof[j],cof[k])) )
-		cof_ret = max(cof[i],max(cof[j],cof[k]));
-
-	return cof_ret;
-
+    float d1 = dis(x1, y1, ii, jj),
+          d2 = dis(x2, y2, ii, jj),
+          d3 = dis(x3, y3, ii, jj);
+    if (d1 < d2) {
+        if (d1 < d3) 
+            return cof[i];
+        else 
+            return cof[k];
+    } else {
+        if (d2 < d3)
+            return cof[j];
+        else
+            return cof[k];
+    }
 }
-
 
 bool isline(float* xy3){
 	float ax = xy3[0]-xy3[4];
