@@ -1,15 +1,14 @@
 #include "rastertriangle.h"
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <cstring>
 #include <algorithm>
 
-using namespace cv;
-
 using std::vector;
 using std::pair;
 
+using std::swap;
+using std::min;
+using std::max;
 
 
 extern "C"{

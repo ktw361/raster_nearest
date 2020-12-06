@@ -1,5 +1,6 @@
 Linemod_preprocessed
 SUN2012pascalformat
+*.dSYM/
 .tags
 *.so
 rastertriangle_test

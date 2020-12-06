@@ -1,11 +1,7 @@
 #include "rastertriangle.h"
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <cstring>
 #include <algorithm>
-
-using namespace cv;
 
 using std::vector;
 using std::pair;
