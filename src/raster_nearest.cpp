@@ -6,37 +6,21 @@
 using std::vector;
 using std::pair;
 
+using std::swap;
+using std::min;
+using std::max;
 
 
 extern "C"{
-
-//n * 3 * 2 floats in xys
-void rasterTrianglesRGB(int h,int w,unsigned char *img,int n,float * xys,unsigned char * colors){
-	for (int i=0;i<n;i++){
-		RasterTriangle::PixelEnumerator<float> pixels(
-			xys[i*6+0],
-			xys[i*6+1],
-			xys[i*6+2],
-			xys[i*6+3],
-			xys[i*6+4],
-			xys[i*6+5],
-		0,h-1,0,w-1);
-		//h/6,h-h/6-1,w/6,w-w/6-1);
-		int x,y;
-		float u,v;
-		while (pixels.getNext(&x,&y,&u,&v)){
-			img[(x*w+y)*3+0]=colors[i*9+0*3+0]*(1-u-v)+colors[i*9+1*3+0]*u+colors[i*9+2*3+0]*v;
-			img[(x*w+y)*3+1]=colors[i*9+0*3+1]*(1-u-v)+colors[i*9+1*3+1]*u+colors[i*9+2*3+1]*v;
-			img[(x*w+y)*3+2]=colors[i*9+0*3+2]*(1-u-v)+colors[i*9+1*3+2]*u+colors[i*9+2*3+2]*v;
-		}
-	}
-}
-void getAllPixels_phase1(int lx,int hx,int ly,int hy,float * xy3,void ** handle,int *n){
+void getAllPixels_phase1(int lx,int hx,int ly,int hy,
+                         float * xy3,void ** handle,int *n)
+{
 	vector<pair<pair<int,int>,pair<float,float> > > *all_pixels=new vector<pair<pair<int,int>,pair<float,float> > >(RasterTriangle::allPixels(
 		xy3[0],xy3[1],xy3[2],xy3[3],xy3[4],xy3[5],lx,hx,ly,hy));
 	handle[0]=all_pixels;
 	n[0]=all_pixels->size();
 }
+
 void getAllPixels_phase2(void ** handle,int * xys,float * uvs){
 	vector<pair<pair<int,int>,pair<float,float> > > *all_pixels=(vector<pair<pair<int,int>,pair<float,float> > >*)handle[0];
 	int n=all_pixels->size();
@@ -93,7 +77,6 @@ float inter2(float * points_2d,float * cof,int ii,int jj,int i,int j){
   	float s1 = dis(ii,jj,x1,y1);
   	float s2 = dis(ii,jj,x2,y2);
     return (s1 < s2) ? cof[i] : cof[j];
-  	/* return s2/(s1+s2)*cof[i] + s1/(s1+s2)*cof[j]; */
 }
 
 float inter(float* points_2d,
@@ -101,6 +84,15 @@ float inter(float* points_2d,
             int ii, int jj,
             int i, int j, int k)
 {
+	if (equal(points_2d,i,j) &&  equal(points_2d,j,k) && equal(points_2d,i,k))
+		return cof[i];
+	if (equal(points_2d,i,j))
+		return inter2(points_2d,cof,ii,jj,j,k);
+	if (equal(points_2d,i,k))
+		return inter2(points_2d,cof,ii,jj,j,k);
+	if (equal(points_2d,j,k))
+		return inter2(points_2d,cof,ii,jj,i,j);
+
 	float x1 = points_2d[i*2];
 	float y1 = points_2d[i*2+1];
 	float x2 = points_2d[j*2];
@@ -123,6 +115,7 @@ float inter(float* points_2d,
             return cof[k];
     }
 }
+
 
 bool isline(float* xy3){
 	float ax = xy3[0]-xy3[4];
@@ -193,7 +186,7 @@ void cover_rgbd(float* p,  // P_2d
 }
 
 
-void rgbzbuffer(int h, int w, 
+void rgbzbuffer_noinit(int h, int w, 
                 float* points_onface,      // lambda * points_onface (P_2d) = K * P_3d
                 float* points_onface_ori,  // Unused
                 float* points_z, 
@@ -203,11 +196,10 @@ void rgbzbuffer(int h, int w,
 {
 
 	int * triangle = (int *) malloc(sizeof(int)*h*w);	
-	//float * zbuf = (float *) malloc(sizeof(float)*h*w);
 
 	for (int i=0; i<h; i++)
 		for (int j=0; j<w; j++){
-			triangle[i*w+j] = -1, zbuf[i*w+j] = 1e9, rbuf[i*w+j] = gbuf[i*w+j] = bbuf[i*w+j] = 0;
+			triangle[i*w+j] = -1;
 		}
 	
 	int * xys = (int *) malloc(sizeof(int)*h*w*2);
@@ -220,10 +212,6 @@ void rgbzbuffer(int h, int w,
 		);
 	}
 
-	for (int i=0; i<h; i++)
-		for (int j=0; j<w; j++){
-			zbuf[i*w+j] = (zbuf[i*w+j] < 1e8) ? zbuf[i*w+j] : 0;
-		}
 	free(triangle);
 	free(xys);
 }
